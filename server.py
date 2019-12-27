@@ -65,15 +65,46 @@ class ExecuteServer(BaseHTTPRequestHandler):
         self.send_header('Content-type', 'text/html')
         self.end_headers()
 
+class Logo():
+    def __init__(self):
+        pass
+
+    def print_color(self, string, fore = '', mode = '', back = '', ends = ''):
+        style = ';'.join([s for s in [mode, fore, back] if s])
+        style = '\033[%sm' % style if style else ''
+        _end   = '\033[0m'
+        print('%s%s%s' % (style, string, _end), end = ends)
+
+    def logred(self, string):
+        self.print_color(string, fore = '31', ends='\n')
+
+    def logyellow(self, string):
+        self.print_color(string, fore = '33', ends='\n')
+
+    def logblue(self, string):
+        self.print_color(string, fore = '36')
+
+    def show(self):
+        self.logblue('     _____ __              __             ');self.logyellow('    ____             __     ')
+        self.logblue('    / ___// /_  ____ _____/ /___ _      __');self.logyellow('   / __ \__  _______/ /__   ')
+        self.logblue('    \__ \/ __ \/ __ `/ __  / __ \ | /| / /');self.logyellow('  / / / / / / / ___/ //_/   ')
+        self.logblue('   ___/ / / / / /_/ / /_/ / /_/ / |/ |/ / ');self.logyellow(' / /_/ / /_/ / /__/ ,<      ')
+        self.logblue('  /____/_/ /_/\__,_/\__,_/\____/|__/|__/  ');self.logyellow('/_____/\__,_/\___/_/|_|     ')
+        print('                                                                      ')
+        self.logred('  Interactive reverse connection shell based on HTTP short connection ')
+        self.logred('                                                                      ')
+        self.logred('   version: 1.0                                           By t1ddl3r  ')
+        self.logred('                                                                      ')
 
 
 def start_execute_server():
     server = HTTPServer(host, ExecuteServer)
-    print("Starting server, listen at port %s" % host[1])
+    print(" [+] Starting server, listen at port %s" % host[1])
     server.serve_forever()
 
-
 def main():
+    logo = Logo()
+    logo.show()
     t = threading.Thread(target=start_execute_server)
     t.setDaemon(True)
     t.start()

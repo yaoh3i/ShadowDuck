@@ -1,4 +1,4 @@
-# 灰鸭
+# Shadow Duck
 **Interactive reverse connection shell based on HTTP short connection。**
 [中文文档](https://github.com/TidDl3R/ShadowDuck/blob/master/README-ch.md "中文文档")
 ## Feature
