@@ -1,5 +1,5 @@
 from http.server import HTTPServer, BaseHTTPRequestHandler
-import sys, queue, time, threading, readline, os
+import sys, queue, threading, readline
 
 mq = queue.Queue()
 host = ('', 8088)
@@ -103,14 +103,28 @@ def start_execute_server():
     server.serve_forever()
 
 def main():
+    global SYSTEM_STATE
     logo = Logo()
     logo.show()
     t = threading.Thread(target=start_execute_server)
     t.setDaemon(True)
     t.start()
-    while SYSTEM_STATE == 'live':
-        data = input('')
-        mq.put(data)
+    while True:
+        try:
+            while SYSTEM_STATE == 'live':
+                data = input('')
+                mq.put(data)
+            break
+        except KeyboardInterrupt:
+            print('\n Received Ctrl+C, terminate program or terminate last command? [C]ommand(default)/[p]rocess/[q]uit')
+            choose = input('Please choose: ')
+            if choose.lower() == 'p':
+                SYSTEM_STATE = 'die'
+            elif choose.lower() == 'q':
+                pass
+            else:
+                mq.put('KeyboardInterrupt')
+
 
 if __name__ == '__main__':
     main()

